@@ -1,0 +1,7 @@
+.venv310/
+__pycache__/
+runs/
+temp/
+temp_results/
+uploads/
+.vscode/

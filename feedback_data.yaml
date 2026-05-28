@@ -1,0 +1,5 @@
+train: feedback_dataset/images
+val: feedback_dataset/images
+
+nc: 4
+names: ['Glioma', 'Meningioma', 'No Tumor', 'Pituitary']
