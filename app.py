@@ -11,6 +11,7 @@ from ultralytics import YOLO
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from report_generator import generate_report
 
 def load_training_metrics():
     csv_path = "runs/detect/train/results.csv"
@@ -360,41 +361,60 @@ with tab2:
             st.write(f"*Prediction:* {st.session_state['pred']}")
             st.write(f"*Confidence:* {round(st.session_state['confidence'] * 100, 2)}%")
 
-            # ---------------- EXPLANATION ----------------
-            st.subheader("🔥 Explainable AI")
+    # =========================
+    # AI REPORT GENERATION
+    # =========================
 
-            if st.session_state["pred"] != "No Tumor" and "bbox" in st.session_state:
-                exp = st.session_state["explanation"]
-                st.write(f"• Confidence (%): *{exp['Confidence (%)']}%*")
-                st.write(f"• Location: *{exp['Location']}*")
-                st.write(f"• Area Covered (%): *{exp['Area Covered (%)']}%*")
-                st.write("""
-                The model focuses on a specific region in the MRI scan where abnormal tissue patterns are detected.
+    if st.button("📄 Generate AI Medical Report"):
 
-                • The highlighted area (heatmap) shows where the model paid attention  
-                • Texture and intensity differences in this region indicate possible tumor presence  
-                • The bounding box localizes the suspicious area used for classification  
-                """)
+        report = generate_report(
+            st.session_state["pred"],
+            st.session_state["confidence"] * 100,
+            st.session_state["explanation"]["Location"],
+            st.session_state["explanation"]["Area Covered (%)"]
+        )
 
-            else:
-                st.write("""
-                No strong abnormal region was detected in the MRI.
+        st.subheader("📋 AI Generated Report")
 
-                • The scan appears structurally normal  
-                • No high-intensity or irregular tumor-like patterns found  
-                 • Hence classified as *No Tumor*
-                """) 
-        metrics = format_metrics()
+        st.write(report)
 
-        if metrics:
-            st.subheader("📊 Model Performance")
+        st.download_button(
+            label="⬇ Download Report",
+            data=report,
+            file_name="brain_tumor_report.txt",
+            mime="text/plain"
+        )
 
-            col1, col2, col3, col4 = st.columns(4)
+   # ---------------- EXPLANATION ----------------
+st.subheader("🔥 Explainable AI")
 
-            col1.metric("Accuracy", round(metrics["Accuracy"], 3))
-            col2.metric("Precision", round(metrics["Precision"], 3))
-            col3.metric("Recall", round(metrics["Recall"], 3))
-            col4.metric("F1 Score", round(metrics["F1"], 3))
+if "pred" in st.session_state and st.session_state["pred"] != "No Tumor" and "bbox" in st.session_state:
+
+    exp = st.session_state["explanation"]
+
+    st.write(f"• Confidence (%): *{exp['Confidence (%)']}%*")
+    st.write(f"• Location: *{exp['Location']}*")
+    st.write(f"• Area Covered (%): *{exp['Area Covered (%)']}%*")
+
+    # st.write("""
+    # The model focuses on a specific region...
+    # """)
+
+# else:
+#     st.write("""
+#     No strong abnormal region was detected.
+#     """)
+metrics = format_metrics()
+
+if metrics:
+    st.subheader("📊 Model Performance")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Accuracy", round(metrics["Accuracy"], 3))
+    col2.metric("Precision", round(metrics["Precision"], 3))
+    col3.metric("Recall", round(metrics["Recall"], 3))
+    col4.metric("F1 Score", round(metrics["F1"], 3))
                  
 
 with tab3:
